@@ -1,0 +1,5 @@
+proxy-host-1_access.log
+test
+GeoLite2-City.mmdb
+.idea
+go.sum
