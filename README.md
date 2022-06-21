@@ -1,7 +1,7 @@
 # nginxproxymanager-traf
 
-[![Drone (self-hosted)](https://img.shields.io/drone/build/rexlmanu/nginxproxymanager-traf?server=https%3A%2F%2Fdrone.it-lampe.de&style=for-the-badge)](https://drone.it-lampe.de/rexlManu/nginxproxymanager-traf)
-[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/rexlmanu/nginxproxymanager-traf?style=for-the-badge)](https://hub.docker.com/r/rexlmanu/nginxproxymanager-traf)
+[![Build Status](https://drone.it-lampe.de/api/badges/rexlManu/nginxproxymanager-traf/status.svg)](https://drone.it-lampe.de/rexlManu/nginxproxymanager-traf)
+[![Docker Image](https://img.shields.io/badge/docker-images-important.svg?logo=Docker)](https://hub.docker.com/r/rexlmanu/nginxproxymanager-traf)
 
 Log your access traffic to influxdb for grafana.
 
