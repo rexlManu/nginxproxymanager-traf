@@ -3,7 +3,7 @@
 [![Build Status](https://drone.it-lampe.de/api/badges/rexlManu/nginxproxymanager-traf/status.svg)](https://drone.it-lampe.de/rexlManu/nginxproxymanager-traf)
 [![Docker Image](https://img.shields.io/badge/docker-images-important.svg?logo=Docker)](https://hub.docker.com/r/rexlmanu/nginxproxymanager-traf)
 
-Log your access traffic to influxdb for grafana.
+Log your access logs from [nginxproxymanager](https://github.com/NginxProxyManager/nginx-proxy-manager) traffic to influxdb for grafana.
 
 ## Example
 <img src=".github/assets/grafana.jpg">
