@@ -15,4 +15,4 @@ steps:
       password:
         from_secret: docker_password
       repo: ${DRONE_REPO}
-      tags: [${DRONE_TAG}, latest]
+      tags: ["${DRONE_TAG}", "latest"]
