@@ -1,5 +1,6 @@
 proxy-host-1_access.log
 test
 GeoLite2-City.mmdb
+GeoLite2-ASN.mmdb
+GeoLite2-Country.mmdb
 .idea
-go.sum

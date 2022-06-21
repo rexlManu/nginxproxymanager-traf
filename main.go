@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	fsnotify "github.com/fsnotify/fsnotify"
+	"github.com/fsnotify/fsnotify"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/satyrius/gonx"
@@ -11,17 +11,26 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
-const logsPath = "./"
+const logsPath = "/logs"
 const logPattern = "proxy-host-*_access.log"
 const nginxConfig = "nginx/nginx.conf"
 
 func main() {
+	println("Launching nginxproxymanager-traf")
 	// create reader for /etc/nginx/nginx.conf
-	db, _ := geoip2.Open("GeoLite2-City.mmdb")
+	db, err := geoip2.Open("GeoLite2-City.mmdb")
+	if err != nil {
+		log.Fatal("Could not open GeoLite City Database: ", err)
+	}
+	dbAsn, err := geoip2.Open("GeoLite2-ASN.mmdb")
+	if err != nil {
+		log.Fatal("Could not open GeoLite ASN Database", err)
+	}
 	defer db.Close()
 
 	file, err := os.Open(nginxConfig)
@@ -52,7 +61,8 @@ func main() {
 
 		time, err := time.Parse("02/Jan/2006:15:04:05 -0700", timeString)
 		if err != nil {
-			log.Fatal("Could not parse time: ", err)
+			// log.Fatal("Could not parse time: ", err)
+			return nil
 		}
 
 		upstreamStatus, err := entry.Field("upstream_status")
@@ -76,19 +86,25 @@ func main() {
 		latitude := 0.0
 		longitude := 0.0
 		postalCode := ""
+		asn := ""
 
 		if !ip.IsPrivate() && !ip.IsLoopback() {
 			record, _ := db.City(ip)
+			asnRecord, _ := dbAsn.ASN(ip)
 			cityName = record.City.Names["en"]
-			stateName = record.Subdivisions[0].Names["en"]
+			if len(record.Subdivisions) > 0 {
+				stateName = record.Subdivisions[0].Names["en"]
+			}
 			country = record.Country.Names["en"]
 			latitude = record.Location.Latitude
 			longitude = record.Location.Longitude
 			postalCode = record.Postal.Code
+			asn = asnRecord.AutonomousSystemOrganization
 		}
 
 		fmt.Printf("IP %s, Target: %s, Country: %s, City: %s\n", ip, host, country, cityName)
 
+		parseInt, err := strconv.ParseInt(bodyBytesSent, 10, 64)
 		point := influxdb2.NewPoint("nginx_access_log", map[string]string{
 			"target":      host,
 			"client_ip":   remoteAddr,
@@ -98,6 +114,7 @@ func main() {
 			"latitude":    fmt.Sprintf("%f", latitude),
 			"longitude":   fmt.Sprintf("%f", longitude),
 			"postal_code": postalCode,
+			"asn":         asn,
 		}, map[string]interface{}{
 			"upstream_status": upstreamStatus,
 			"status":          status,
@@ -106,7 +123,7 @@ func main() {
 			"target":          host,
 			"uri":             requestUri,
 			"client_ip":       remoteAddr,
-			"body_bytes":      bodyBytesSent,
+			"body_bytes":      parseInt,
 			"gzip_ratio":      gzipRation,
 			"server":          server,
 			"user_agent":      httpUserAgent,
@@ -118,6 +135,7 @@ func main() {
 			"latitude":        latitude,
 			"longitude":       longitude,
 			"postal_code":     postalCode,
+			"asn":             asn,
 		}, time)
 
 		writeApi.WritePoint(point)
@@ -132,7 +150,7 @@ func listenForFileModifications(callback func(string) error) {
 	// create a new file watcher, use fsnotify
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	defer watcher.Close()
 	done := make(chan bool)
@@ -142,7 +160,9 @@ func listenForFileModifications(callback func(string) error) {
 			select {
 
 			case event := <-watcher.Events:
-				match, err := filepath.Match(logPattern, strings.Replace(event.Name, "./", "", 1))
+				parts := strings.Split(event.Name, "/")
+				fileName := parts[len(parts)-1]
+				match, err := filepath.Match(logPattern, fileName)
 				// if the event is a new line
 				if event.Op&fsnotify.Write == fsnotify.Write && match {
 					// read the new line
@@ -155,13 +175,13 @@ func listenForFileModifications(callback func(string) error) {
 
 				}
 			case err := <-watcher.Errors:
-				log.Fatal("error:", err)
+				log.Println("error:", err)
 			}
 		}
 	}()
 	err = watcher.Add(logsPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	<-done
 }
@@ -170,8 +190,8 @@ func readLine(filepath string) string {
 	fileHandle, err := os.Open(filepath)
 
 	if err != nil {
-		panic("Cannot open file")
-		os.Exit(1)
+		// panic("Cannot open file")
+		//os.Exit(1)
 	}
 	defer fileHandle.Close()
 
@@ -198,24 +218,4 @@ func readLine(filepath string) string {
 	}
 
 	return line
-}
-func getLogFiles(path string, pattern string) []string {
-	// create a slice to store the log files
-	var logFiles []string
-	// walk the logs directory
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		// if the file is a log file
-		// pattern is a glob pattern, so we use filepath.Match to check if the file matches the pattern
-		match, err := filepath.Match(pattern, info.Name())
-		if !info.IsDir() && match {
-			// add the file to the slice
-			logFiles = append(logFiles, path)
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return logFiles
 }
