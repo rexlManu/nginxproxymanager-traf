@@ -5,7 +5,7 @@
 
 Log your access logs from [nginxproxymanager](https://github.com/NginxProxyManager/nginx-proxy-manager) traffic to influxdb for grafana.
 
-## Example
+## Example usage case
 <img src=".github/assets/grafana.jpg">
 
 ## Setup
