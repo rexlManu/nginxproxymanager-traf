@@ -14,5 +14,5 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-      repo: ${DRONE_REPO}
+      repo: rexlmanu/nginxproxymanager-traf
       tags: ["${DRONE_TAG}", "latest"]
