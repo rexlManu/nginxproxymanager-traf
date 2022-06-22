@@ -11,6 +11,7 @@ Log your access logs from [nginxproxymanager](https://github.com/NginxProxyManag
 ## Setup
 
 Download the GeoLite2 databases from [maxmind.com](https://www.maxmind.com/en/geolite2/) or via the script.
+Create a nginx folder in your current pwd with a nginx.conf file inside.
 
 ```bash
 docker run -d --name nginxproxymanager-traf \
@@ -19,8 +20,10 @@ docker run -d --name nginxproxymanager-traf \
     -e INFLUXDB_BUCKET=influxdb \
     -e INFLUXDB_ORG=influxdb \
     -v nginx-logs:/logs \
-    -v GeoLite2-City.mmdb:/app/GeoLite2-City.mmdb \
-    -v GeoLite2-ASN.mmdb:/app/GeoLite2-ASN.mmdb \
+    -v $(pwd)/GeoLite2-City.mmdb:/app/GeoLite2-City.mmdb \
+    -v $(pwd)/GeoLite2-ASN.mmdb:/app/GeoLite2-ASN.mmdb \
+    -v $(pwd)/nginx/:/app/nginx/ \
+    --restart=unless-stopped \
     rexlmanu/nginxproxymanager-traf
 ```
 
